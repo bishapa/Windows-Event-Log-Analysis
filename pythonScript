@@ -1,0 +1,73 @@
+#!/usr/bin/python
+
+import os
+import re
+import datetime
+import matplotlib.pyplot as plt
+
+eventIDs = {
+    '1102': {'count': 0}, '4611': {'count': 0}, '4624': {'count': 0}, '4634': {'count': 0},
+    '4648': {'count': 0}, '4661': {'count': 0}, '4662': {'count': 0}, '4663': {'count': 0},
+    '4672': {'count': 0}, '4673': {'count': 0}, '4688': {'count': 0}, '4698': {'count': 0},
+    '4699': {'count': 0}, '4702': {'count': 0}, '4703': {'count': 0}, '4719': {'count': 0},
+    '4732': {'count': 0}, '4738': {'count': 0}, '4742': {'count': 0}, '4776': {'count': 0},
+    '4798': {'count': 0}, '4799': {'count': 0}, '4985': {'count': 0}, '5136': {'count': 0},
+    '5140': {'count': 0}, '5142': {'count': 0}, '5156': {'count': 0}, '5158': {'count': 0}
+}
+
+log_filename = "analysis_log_02_Jan_2020-3.txt"
+
+# read the log file and process event IDs
+print("Processing log file...")
+try:
+    with open(log_filename, 'r') as file:
+        for line in file:
+            match = re.search(r"MATCHED Event ID:\s*(\d+)", line)
+            if match:
+                event_id = match.group(1)
+                if event_id in eventIDs:
+                    eventIDs[event_id]['count'] += 1
+except FileNotFoundError:
+    print(f"Error: File '{log_filename}' not found.")
+    exit()
+
+# log output filename
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+log_dir = "CI5235_K2306374_Vladimir/CI5235_logs"
+os.makedirs(log_dir, exist_ok=True)
+output_log_file = os.path.join(log_dir, f"visdata_log_{timestamp}.txt")
+
+# write results to log file
+print("Writing results to log file...")
+with open(output_log_file, 'w') as log_file:
+    for event_id, data in eventIDs.items():
+        log_file.write(f"Event ID: {event_id}\n")
+        log_file.write(f"Count: {data['count']}\n\n") 
+
+# read the log file again
+print("Reading the log file...")
+eventID_list = []
+eventIDCount_list = []
+
+with open(output_log_file, 'r') as log_file:
+    current_event_id = None
+    for line in log_file:
+        line = line.strip()
+        if line.startswith("Event ID:"):
+            current_event_id = line.split(": ")[1]
+        elif line.startswith("Count:"):
+            count = int(line.split(": ")[1])
+            eventID_list.append(current_event_id)
+            eventIDCount_list.append(count)
+
+# generate bar graph
+print("Generating visualization...")
+plt.figure(figsize=(10, 6))
+plt.barh(eventID_list, eventIDCount_list, color='blue')
+plt.xlabel("Count")
+plt.ylabel("Event ID")
+plt.title("Event ID Occurrences")
+plt.grid(axis='x', linestyle='--', alpha=0.7)
+plt.show()
+
+print(f"Script execution completed. Log file saved as: {output_log_file}")
